@@ -39,15 +39,15 @@ terraform {
 }
 
 inputs = {
-  pipeline_name             = "aws-assessment-dev-lambda-pipeline-${local.region_vars.locals.aws_region}"
-  build_project_name        = "aws-assessment-dev-lambda-build-${local.region_vars.locals.aws_region}"
-  artifact_bucket_name      = dependency.s3.outputs.bucket_id
-  codestar_connection_arn   = local.account_vars.locals.codestar_connection_arn
-  github_full_repository_id = "${local.account_vars.locals.github_owner}/${local.account_vars.locals.github_repo}"
-  github_branch             = local.account_vars.locals.github_branch
-  buildspec_path            = local.account_vars.locals.cicd.lambda_buildspec_path
-  lambda_function_name      = dependency.lambda.outputs.function_name
+  pipeline_name                   = "aws-assessment-dev-lambda-pipeline-${local.region_vars.locals.aws_region}"
+  build_project_name              = "aws-assessment-dev-lambda-build-${local.region_vars.locals.aws_region}"
+  artifact_bucket_name            = dependency.s3.outputs.bucket_id
+  codestar_connection_arn         = local.account_vars.locals.codestar_connection_arn
+  github_full_repository_id       = "${local.account_vars.locals.github_owner}/${local.account_vars.locals.github_repo}"
+  github_branch                   = local.account_vars.locals.github_branch
+  buildspec_path                  = local.account_vars.locals.cicd.lambda_buildspec_path
+  lambda_function_name            = dependency.lambda.outputs.function_name
   dispatcher_lambda_function_name = dependency.dispatcher_lambda.outputs.function_name
-  codepipeline_role_name    = "aws-assessment-dev-cp-lambda-${local.region_vars.locals.aws_region}"
-  codebuild_role_name       = "aws-assessment-dev-cb-lambda-${local.region_vars.locals.aws_region}"
+  codepipeline_role_name          = "aws-assessment-dev-cp-lambda-${local.region_vars.locals.aws_region}"
+  codebuild_role_name             = "aws-assessment-dev-cb-lambda-${local.region_vars.locals.aws_region}"
 }

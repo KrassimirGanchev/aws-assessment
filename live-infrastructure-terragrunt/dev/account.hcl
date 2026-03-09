@@ -24,7 +24,7 @@ locals {
   selected_candidate_sns_topic_arn = lookup({ true = local.candidate_sns_topic_arn, false = "" }, local.use_candidate_sns_topic, "")
   selected_assessor_sns_topic_arn  = lookup({ true = local.unleash_verification_topic_arn, false = "" }, local.use_assessor_sns_topic, "")
   selected_sns_topic_arns          = compact([local.selected_candidate_sns_topic_arn, local.selected_assessor_sns_topic_arn])
-  auth_region = "us-east-1"
+  auth_region                      = "us-east-1"
 
   api_throttling_burst_limit = 20
   api_throttling_rate_limit  = 10
