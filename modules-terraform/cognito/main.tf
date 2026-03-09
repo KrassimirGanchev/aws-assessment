@@ -1,7 +1,7 @@
 locals {
-  use_mock_test_user_password       = can(regex(":000000000000:secret:mock-", var.test_user_temporary_password_secret_arn))
-  should_lookup_test_user_password  = var.create_test_user && !local.use_mock_test_user_password
-  test_user_temporary_password      = local.use_mock_test_user_password ? "MockTempPass123!" : (local.should_lookup_test_user_password ? trimspace(data.aws_secretsmanager_secret_version.test_user_password[0].secret_string) : null)
+  use_mock_test_user_password      = can(regex(":000000000000:secret:mock-", var.test_user_temporary_password_secret_arn))
+  should_lookup_test_user_password = var.create_test_user && !local.use_mock_test_user_password
+  test_user_temporary_password     = local.use_mock_test_user_password ? "MockTempPass123!" : (local.should_lookup_test_user_password ? trimspace(data.aws_secretsmanager_secret_version.test_user_password[0].secret_string) : null)
 }
 
 data "aws_secretsmanager_secret_version" "test_user_password" {
