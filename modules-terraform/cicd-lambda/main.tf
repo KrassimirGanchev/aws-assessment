@@ -4,7 +4,7 @@ data "aws_region" "current" {}
 locals {
   codebuild_log_group_name = "/aws/codebuild/${var.build_project_name}"
   codebuild_log_group_arn  = "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:${local.codebuild_log_group_name}"
-  lambda_function_arns     = compact([
+  lambda_function_arns = compact([
     "arn:aws:lambda:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:function:${var.lambda_function_name}",
     var.dispatcher_lambda_function_name != "" ? "arn:aws:lambda:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:function:${var.dispatcher_lambda_function_name}" : ""
   ])
@@ -168,8 +168,8 @@ resource "aws_iam_role_policy" "codebuild" {
 }
 
 resource "aws_codebuild_project" "this" {
-  name         = var.build_project_name
-  service_role = aws_iam_role.codebuild.arn
+  name           = var.build_project_name
+  service_role   = aws_iam_role.codebuild.arn
   encryption_key = aws_kms_key.cicd.arn
 
   artifacts {
