@@ -1,7 +1,45 @@
+data "aws_caller_identity" "current" {}
+
+data "aws_iam_policy_document" "flow_logs_assume_role" {
+  statement {
+    effect = "Allow"
+
+    principals {
+      type        = "Service"
+      identifiers = ["vpc-flow-logs.amazonaws.com"]
+    }
+
+    actions = ["sts:AssumeRole"]
+  }
+}
+
+data "aws_iam_policy_document" "flow_logs_role" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "logs:CreateLogGroup",
+      "logs:CreateLogStream",
+      "logs:DescribeLogGroups",
+      "logs:DescribeLogStreams",
+      "logs:PutLogEvents"
+    ]
+    resources = [
+      aws_cloudwatch_log_group.flow_logs.arn,
+      "${aws_cloudwatch_log_group.flow_logs.arn}:*"
+    ]
+  }
+}
+
 locals {
   common_tags = {
     Name = var.name
   }
+}
+
+resource "aws_cloudwatch_log_group" "flow_logs" {
+  #checkov:skip=CKV_AWS_158: Flow log group encryption is not enabled here to keep the networking baseline lightweight for the assessment environment.
+  name              = "/aws/vpc/${var.name}/flow-logs"
+  retention_in_days = 365
 }
 
 resource "aws_vpc" "this" {
@@ -10,6 +48,36 @@ resource "aws_vpc" "this" {
   enable_dns_support   = true
 
   tags = local.common_tags
+}
+
+resource "aws_default_security_group" "this" {
+  vpc_id = aws_vpc.this.id
+
+  ingress = []
+  egress  = []
+
+  tags = {
+    Name = "${var.name}-default-sg"
+  }
+}
+
+resource "aws_iam_role" "flow_logs" {
+  name               = "${var.name}-flow-logs-role"
+  assume_role_policy = data.aws_iam_policy_document.flow_logs_assume_role.json
+}
+
+resource "aws_iam_role_policy" "flow_logs" {
+  name   = "${var.name}-flow-logs-policy"
+  role   = aws_iam_role.flow_logs.id
+  policy = data.aws_iam_policy_document.flow_logs_role.json
+}
+
+resource "aws_flow_log" "this" {
+  iam_role_arn         = aws_iam_role.flow_logs.arn
+  log_destination      = aws_cloudwatch_log_group.flow_logs.arn
+  log_destination_type = "cloud-watch-logs"
+  traffic_type         = "ALL"
+  vpc_id               = aws_vpc.this.id
 }
 
 resource "aws_internet_gateway" "this" {

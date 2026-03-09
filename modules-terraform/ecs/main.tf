@@ -1,18 +1,54 @@
+data "aws_caller_identity" "current" {}
+
+data "aws_iam_policy_document" "logs_kms" {
+  #checkov:skip=CKV_AWS_109: Root-admin KMS key policy is required for customer-managed ECS log encryption.
+  #checkov:skip=CKV_AWS_111: Root-admin KMS key policy is intentionally broad for bootstrap ownership of the CMK.
+  #checkov:skip=CKV_AWS_356: AWS KMS root administration requires the standard wildcard resource policy shape.
+  statement {
+    sid    = "EnableRootPermissions"
+    effect = "Allow"
+
+    principals {
+      type        = "AWS"
+      identifiers = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"]
+    }
+
+    actions   = ["kms:*"]
+    resources = ["*"]
+  }
+}
+
+resource "aws_kms_key" "logs" {
+  description             = "CMK for ECS logs for ${var.task_family}"
+  deletion_window_in_days = 7
+  enable_key_rotation     = true
+  policy                  = data.aws_iam_policy_document.logs_kms.json
+}
+
 resource "aws_cloudwatch_log_group" "this" {
   name              = "/ecs/${var.task_family}"
   retention_in_days = var.log_retention_days
+  kms_key_id        = aws_kms_key.logs.arn
 }
 
 resource "aws_ecs_cluster" "this" {
   name = var.cluster_name
+
+  setting {
+    name  = "containerInsights"
+    value = "enabled"
+  }
 }
 
 resource "aws_security_group" "task" {
+  #checkov:skip=CKV_AWS_382: This Fargate task requires outbound internet access for AWS APIs and image pulls in the assessment environment.
+  #checkov:skip=CKV2_AWS_5: This security group is attached by module consumers through ECS task networking outputs, which static analysis cannot infer.
   name        = "${var.task_family}-task-sg"
   description = "Security group for standalone ECS Fargate tasks"
   vpc_id      = var.vpc_id
 
   egress {
+    description = "Allow outbound traffic for ECS task image pulls and AWS API calls"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"

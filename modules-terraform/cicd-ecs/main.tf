@@ -1,5 +1,23 @@
 data "aws_caller_identity" "current" {}
 
+data "aws_iam_policy_document" "cicd_kms" {
+  #checkov:skip=CKV_AWS_109: Root-admin KMS key policy is required for CI/CD CMK ownership and bootstrap access.
+  #checkov:skip=CKV_AWS_111: Root-admin KMS key policy is intentionally broad for bootstrap ownership of the CMK.
+  #checkov:skip=CKV_AWS_356: AWS KMS root administration requires the standard wildcard resource policy shape.
+  statement {
+    sid    = "EnableRootPermissions"
+    effect = "Allow"
+
+    principals {
+      type        = "AWS"
+      identifiers = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"]
+    }
+
+    actions   = ["kms:*"]
+    resources = ["*"]
+  }
+}
+
 locals {
   codebuild_log_group_name = "/aws/codebuild/${var.build_project_name}"
   codebuild_log_group_arn  = "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:${local.codebuild_log_group_name}"
@@ -10,6 +28,7 @@ resource "aws_kms_key" "cicd" {
   description             = "CMK for ${var.pipeline_name} pipeline artifacts and builds"
   deletion_window_in_days = 7
   enable_key_rotation     = true
+  policy                  = data.aws_iam_policy_document.cicd_kms.json
 }
 
 resource "aws_kms_alias" "cicd" {
@@ -19,7 +38,8 @@ resource "aws_kms_alias" "cicd" {
 
 resource "aws_cloudwatch_log_group" "codebuild" {
   name              = local.codebuild_log_group_name
-  retention_in_days = 14
+  retention_in_days = 365
+  kms_key_id        = aws_kms_key.cicd.arn
 }
 
 resource "aws_iam_role" "codepipeline" {
@@ -174,8 +194,8 @@ resource "aws_iam_role_policy" "codebuild" {
   })
 }
 
-#checkov:skip=CKV_AWS_316: Privileged mode is required here to build and push Docker images in the ECS container pipeline.
 resource "aws_codebuild_project" "this" {
+  #checkov:skip=CKV_AWS_316: Privileged mode is required here to build and push Docker images in the ECS container pipeline.
   name         = var.build_project_name
   service_role = aws_iam_role.codebuild.arn
   encryption_key = aws_kms_key.cicd.arn

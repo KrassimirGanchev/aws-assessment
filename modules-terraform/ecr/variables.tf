@@ -4,5 +4,5 @@ variable "repository_names" {
 
 variable "image_tag_mutability" {
   type    = string
-  default = "MUTABLE"
+  default = "IMMUTABLE"
 }
