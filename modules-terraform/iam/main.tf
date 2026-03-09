@@ -9,13 +9,13 @@ resource "aws_iam_openid_connect_provider" "github" {
 }
 
 locals {
-  github_oidc_provider_arn      = var.create_github_oidc_provider ? aws_iam_openid_connect_provider.github[0].arn : var.github_oidc_provider_arn
-  github_oidc_derived_subjects  = distinct(concat(
+  github_oidc_provider_arn = var.create_github_oidc_provider ? aws_iam_openid_connect_provider.github[0].arn : var.github_oidc_provider_arn
+  github_oidc_derived_subjects = distinct(concat(
     var.github_repository != "" && var.github_branch != "" ? ["repo:${var.github_repository}:ref:refs/heads/${var.github_branch}"] : [],
     var.github_repository != "" ? [for env in var.github_environments : "repo:${var.github_repository}:environment:${env}"] : [],
     var.github_repository != "" && var.github_allow_pull_request_subject ? ["repo:${var.github_repository}:pull_request"] : []
   ))
-  github_oidc_allowed_subjects  = distinct(concat(var.github_oidc_subjects, local.github_oidc_derived_subjects))
+  github_oidc_allowed_subjects = distinct(concat(var.github_oidc_subjects, local.github_oidc_derived_subjects))
 }
 
 data "aws_iam_policy_document" "github_actions_assume_role" {
