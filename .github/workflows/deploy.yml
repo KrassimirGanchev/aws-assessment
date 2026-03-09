@@ -117,6 +117,11 @@ jobs:
           quiet: true
           soft_fail: true
 
+      - name: Plan (_global)
+        working-directory: live-infrastructure-terragrunt/${{ env.TG_ENV }}/_global
+        run: |
+          terragrunt run --all plan -- -input=false -lock=false -refresh=false -no-color || true
+
       - name: Plan (us-east-1)
         working-directory: live-infrastructure-terragrunt/${{ env.TG_ENV }}/us-east-1
         run: |

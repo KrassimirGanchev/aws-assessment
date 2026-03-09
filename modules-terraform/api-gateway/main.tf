@@ -1,4 +1,10 @@
 data "aws_caller_identity" "current" {}
+data "aws_region" "current" {}
+
+locals {
+  api_access_log_group_name = "/aws/apigateway/${var.api_name}"
+  api_access_log_group_arn  = "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:${local.api_access_log_group_name}"
+}
 
 data "aws_iam_policy_document" "logs_kms" {
   #checkov:skip=CKV_AWS_109: Root-admin KMS key policy is required for customer-managed log encryption in this assessment.
@@ -16,6 +22,31 @@ data "aws_iam_policy_document" "logs_kms" {
     actions   = ["kms:*"]
     resources = ["*"]
   }
+
+  statement {
+    sid    = "AllowCloudWatchLogsUseOfKey"
+    effect = "Allow"
+
+    principals {
+      type        = "Service"
+      identifiers = ["logs.${data.aws_region.current.region}.amazonaws.com"]
+    }
+
+    actions = [
+      "kms:Decrypt",
+      "kms:DescribeKey",
+      "kms:Encrypt",
+      "kms:GenerateDataKey*",
+      "kms:ReEncrypt*"
+    ]
+    resources = ["*"]
+
+    condition {
+      test     = "ArnEquals"
+      variable = "kms:EncryptionContext:aws:logs:arn"
+      values   = [local.api_access_log_group_arn]
+    }
+  }
 }
 
 resource "aws_kms_key" "logs" {
@@ -26,7 +57,7 @@ resource "aws_kms_key" "logs" {
 }
 
 resource "aws_cloudwatch_log_group" "api_access" {
-  name              = "/aws/apigateway/${var.api_name}"
+  name              = local.api_access_log_group_name
   retention_in_days = var.access_log_retention_in_days
   kms_key_id        = aws_kms_key.logs.arn
 }

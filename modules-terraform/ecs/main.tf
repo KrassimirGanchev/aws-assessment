@@ -1,4 +1,10 @@
 data "aws_caller_identity" "current" {}
+data "aws_region" "current" {}
+
+locals {
+  ecs_log_group_name = "/ecs/${var.task_family}"
+  ecs_log_group_arn  = "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:${local.ecs_log_group_name}"
+}
 
 data "aws_iam_policy_document" "logs_kms" {
   #checkov:skip=CKV_AWS_109: Root-admin KMS key policy is required for customer-managed ECS log encryption.
@@ -16,6 +22,31 @@ data "aws_iam_policy_document" "logs_kms" {
     actions   = ["kms:*"]
     resources = ["*"]
   }
+
+  statement {
+    sid    = "AllowCloudWatchLogsUseOfKey"
+    effect = "Allow"
+
+    principals {
+      type        = "Service"
+      identifiers = ["logs.${data.aws_region.current.region}.amazonaws.com"]
+    }
+
+    actions = [
+      "kms:Decrypt",
+      "kms:DescribeKey",
+      "kms:Encrypt",
+      "kms:GenerateDataKey*",
+      "kms:ReEncrypt*"
+    ]
+    resources = ["*"]
+
+    condition {
+      test     = "ArnEquals"
+      variable = "kms:EncryptionContext:aws:logs:arn"
+      values   = [local.ecs_log_group_arn]
+    }
+  }
 }
 
 resource "aws_kms_key" "logs" {
@@ -26,7 +57,7 @@ resource "aws_kms_key" "logs" {
 }
 
 resource "aws_cloudwatch_log_group" "this" {
-  name              = "/ecs/${var.task_family}"
+  name              = local.ecs_log_group_name
   retention_in_days = var.log_retention_days
   kms_key_id        = aws_kms_key.logs.arn
 }

@@ -99,6 +99,8 @@ Already set:
 0) Initial run (this will create the S3 bucket for the .tfstate file)
 
 ```bash
+# run from the repo root
+checkov -d . --framework terraform --quiet --soft-fail --output sarif
 cd live-infrastructure-terragrunt
 terragrunt.exe run --all init --backend-bootstrap
 ```
