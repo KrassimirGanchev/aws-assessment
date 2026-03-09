@@ -60,7 +60,7 @@ jobs:
       - name: Setup Terragrunt
         uses: autero1/action-terragrunt@v3
         with:
-          terragrunt-version: 0.69.1
+          terragrunt-version: 0.95.1
 
       - name: Guard Apply/Destroy Combination
         if: ${{ github.event_name == 'workflow_dispatch' }}
@@ -81,20 +81,20 @@ jobs:
       - name: Terragrunt Validate (Global IAM)
         working-directory: live-infrastructure-terragrunt/${{ env.TG_ENV }}/_global
         run: |
-          terragrunt run -- init -backend=false -input=false
-          terragrunt run -- validate
+          terragrunt run --all init -backend=false -input=false
+          terragrunt run --all validate
 
       - name: Terragrunt Validate (eu-west-1)
         working-directory: live-infrastructure-terragrunt/${{ env.TG_ENV }}/eu-west-1
         run: |
-          terragrunt run-all run -- init -backend=false -input=false
-          terragrunt run-all run -- validate
+          terragrunt run --all init -backend=false -input=false
+          terragrunt run --all validate
 
       - name: Terragrunt Validate (us-east-1)
         working-directory: live-infrastructure-terragrunt/${{ env.TG_ENV }}/us-east-1
         run: |
-          terragrunt run-all run -- init -backend=false -input=false
-          terragrunt run-all run -- validate
+          terragrunt run --all init -backend=false -input=false
+          terragrunt run --all validate
 
       - name: Security Scan (Checkov)
         uses: bridgecrewio/checkov-action@v12
@@ -107,12 +107,12 @@ jobs:
       - name: Plan (us-east-1)
         working-directory: live-infrastructure-terragrunt/${{ env.TG_ENV }}/us-east-1
         run: |
-          terragrunt run-all run -- plan -input=false -lock=false -refresh=false -no-color || true
+          terragrunt run --all plan -input=false -lock=false -refresh=false -no-color || true
 
       - name: Plan (eu-west-1)
         working-directory: live-infrastructure-terragrunt/${{ env.TG_ENV }}/eu-west-1
         run: |
-          terragrunt run-all run -- plan -input=false -lock=false -refresh=false -no-color || true
+          terragrunt run --all plan -input=false -lock=false -refresh=false -no-color || true
 
       - name: Configure AWS Credentials
         if: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.run_apply == 'true' || github.event.inputs.run_tests == 'true' || github.event.inputs.run_destroy == 'true') }}
@@ -125,19 +125,19 @@ jobs:
         if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.run_apply == 'true' }}
         working-directory: live-infrastructure-terragrunt/${{ env.TG_ENV }}/_global
         run: |
-          terragrunt run-all apply --terragrunt-non-interactive --auto-approve
+          terragrunt run --all apply --terragrunt-non-interactive --auto-approve
 
       - name: Apply (us-east-1)
         if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.run_apply == 'true' }}
         working-directory: live-infrastructure-terragrunt/${{ env.TG_ENV }}/us-east-1
         run: |
-          terragrunt run-all apply --terragrunt-non-interactive --auto-approve
+          terragrunt run --all apply --terragrunt-non-interactive --auto-approve
 
       - name: Apply (eu-west-1)
         if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.run_apply == 'true' }}
         working-directory: live-infrastructure-terragrunt/${{ env.TG_ENV }}/eu-west-1
         run: |
-          terragrunt run-all apply --terragrunt-non-interactive --auto-approve
+          terragrunt run --all apply --terragrunt-non-interactive --auto-approve
 
       - name: Collect Deployment Outputs
         if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.run_tests == 'true' }}
@@ -183,16 +183,16 @@ jobs:
         if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.run_destroy == 'true' }}
         working-directory: live-infrastructure-terragrunt/${{ env.TG_ENV }}/eu-west-1
         run: |
-          terragrunt run-all destroy --terragrunt-non-interactive --auto-approve
+          terragrunt run --all destroy --terragrunt-non-interactive --auto-approve
 
       - name: Destroy (us-east-1)
         if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.run_destroy == 'true' }}
         working-directory: live-infrastructure-terragrunt/${{ env.TG_ENV }}/us-east-1
         run: |
-          terragrunt run-all destroy --terragrunt-non-interactive --auto-approve
+          terragrunt run --all destroy --terragrunt-non-interactive --auto-approve
 
       - name: Destroy (_global)
         if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.run_destroy == 'true' }}
         working-directory: live-infrastructure-terragrunt/${{ env.TG_ENV }}/_global
         run: |
-          terragrunt run-all destroy --terragrunt-non-interactive --auto-approve
+          terragrunt run --all destroy --terragrunt-non-interactive --auto-approve
