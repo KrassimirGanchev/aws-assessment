@@ -35,15 +35,15 @@ resource "aws_lambda_function" "this" {
   #checkov:skip=CKV_AWS_117: These assessment Lambdas are intentionally not placed in a VPC to keep the API path simple and public.
   #checkov:skip=CKV_AWS_116: DLQ is not configured because the functions are synchronous handlers without async event sources.
   #checkov:skip=CKV_AWS_272: Code signing is intentionally omitted for this assessment packaging flow.
-  function_name    = var.function_name
-  role             = var.role_arn
-  runtime          = var.runtime
-  handler          = var.handler
-  filename         = var.source_package
-  source_code_hash = filebase64sha256(var.source_package)
-  timeout          = var.timeout
-  memory_size      = var.memory_size
-  kms_key_arn      = aws_kms_key.lambda.arn
+  function_name                  = var.function_name
+  role                           = var.role_arn
+  runtime                        = var.runtime
+  handler                        = var.handler
+  filename                       = var.source_package
+  source_code_hash               = filebase64sha256(var.source_package)
+  timeout                        = var.timeout
+  memory_size                    = var.memory_size
+  kms_key_arn                    = aws_kms_key.lambda.arn
   reserved_concurrent_executions = var.reserved_concurrent_executions
 
   tracing_config {

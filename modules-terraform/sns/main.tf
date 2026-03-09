@@ -28,7 +28,7 @@ resource "aws_kms_key" "sns" {
 resource "aws_sns_topic" "this" {
   name              = var.topic_name
   kms_master_key_id = aws_kms_key.sns.arn
-  tags = { Name = var.topic_name }
+  tags              = { Name = var.topic_name }
 }
 
 resource "aws_sns_topic_subscription" "email" {
