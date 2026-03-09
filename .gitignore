@@ -44,8 +44,5 @@ terragrunt-debug.tfvars.json
 __pycache__/
 *.py[cod]
 
-# Local Lambda build artifacts
-Source/lambda/*.zip
-
 # Documentation files
 *.pdf
