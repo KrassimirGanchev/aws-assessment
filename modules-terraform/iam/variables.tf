@@ -125,6 +125,11 @@ variable "lambda_runtime_dynamodb_table_arns" {
   default = ["*"]
 }
 
+variable "lambda_runtime_kms_key_arns" {
+  type    = list(string)
+  default = ["*"]
+}
+
 variable "lambda_runtime_sns_topic_arns" {
   type    = list(string)
   default = ["*"]

@@ -161,6 +161,17 @@ resource "aws_iam_role_policy" "lambda_runtime" {
         Resource = var.lambda_runtime_dynamodb_table_arns
       },
       {
+        Effect = "Allow"
+        Action = [
+          "kms:Decrypt",
+          "kms:DescribeKey",
+          "kms:Encrypt",
+          "kms:GenerateDataKey*",
+          "kms:ReEncrypt*"
+        ]
+        Resource = var.lambda_runtime_kms_key_arns
+      },
+      {
         Effect   = "Allow"
         Action   = ["sns:Publish"]
         Resource = var.lambda_runtime_sns_topic_arns

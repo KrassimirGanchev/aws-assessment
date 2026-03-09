@@ -28,6 +28,7 @@ inputs = {
 
   lambda_execution_managed_policy_arns = local.iam_vars.locals.lambda_execution_managed_policy_arns
   lambda_runtime_dynamodb_table_arns   = ["arn:aws:dynamodb:*:${local.account_vars.locals.aws_account_id}:table/${local.account_vars.locals.names.dynamodb_table_name}-*"]
+  lambda_runtime_kms_key_arns          = ["arn:aws:kms:*:${local.account_vars.locals.aws_account_id}:key/*"]
   lambda_runtime_sns_topic_arns        = local.account_vars.locals.selected_sns_topic_arns
   lambda_runtime_ecs_cluster_arns      = ["arn:aws:ecs:*:${local.account_vars.locals.aws_account_id}:cluster/${local.account_vars.locals.names.ecs_cluster}-*"]
   lambda_runtime_task_definition_arns  = ["arn:aws:ecs:*:${local.account_vars.locals.aws_account_id}:task-definition/${local.account_vars.locals.names.ecs_task_family}-*-dispatcher*"]

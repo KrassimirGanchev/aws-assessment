@@ -47,6 +47,57 @@ data "aws_iam_policy_document" "lambda_kms" {
       values   = [local.lambda_log_group_arn]
     }
   }
+
+  statement {
+    sid    = "AllowLambdaServiceUseOfKey"
+    effect = "Allow"
+
+    principals {
+      type        = "Service"
+      identifiers = ["lambda.amazonaws.com"]
+    }
+
+    actions = [
+      "kms:CreateGrant",
+      "kms:Decrypt",
+      "kms:DescribeKey",
+      "kms:Encrypt",
+      "kms:GenerateDataKey*",
+      "kms:ReEncrypt*"
+    ]
+    resources = ["*"]
+
+    condition {
+      test     = "StringEquals"
+      variable = "kms:CallerAccount"
+      values   = [data.aws_caller_identity.current.account_id]
+    }
+
+    condition {
+      test     = "StringEquals"
+      variable = "kms:ViaService"
+      values   = ["lambda.${data.aws_region.current.region}.amazonaws.com"]
+    }
+  }
+
+  statement {
+    sid    = "AllowLambdaExecutionRoleUseOfKey"
+    effect = "Allow"
+
+    principals {
+      type        = "AWS"
+      identifiers = [var.role_arn]
+    }
+
+    actions = [
+      "kms:Decrypt",
+      "kms:DescribeKey",
+      "kms:Encrypt",
+      "kms:GenerateDataKey*",
+      "kms:ReEncrypt*"
+    ]
+    resources = ["*"]
+  }
 }
 
 resource "aws_kms_key" "lambda" {
@@ -92,7 +143,6 @@ resource "aws_lambda_function" "this" {
     ignore_changes = [
       filename,
       source_code_hash,
-      last_modified,
     ]
   }
 
