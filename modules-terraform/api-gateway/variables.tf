@@ -49,3 +49,8 @@ variable "waf_web_acl_arn" {
   type    = string
   default = ""
 }
+
+variable "access_log_retention_in_days" {
+  type    = number
+  default = 14
+}

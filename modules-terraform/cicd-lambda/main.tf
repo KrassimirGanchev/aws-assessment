@@ -1,3 +1,31 @@
+data "aws_caller_identity" "current" {}
+data "aws_region" "current" {}
+
+locals {
+  codebuild_log_group_name = "/aws/codebuild/${var.build_project_name}"
+  codebuild_log_group_arn  = "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:${local.codebuild_log_group_name}"
+  lambda_function_arns     = compact([
+    "arn:aws:lambda:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:function:${var.lambda_function_name}",
+    var.dispatcher_lambda_function_name != "" ? "arn:aws:lambda:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:function:${var.dispatcher_lambda_function_name}" : ""
+  ])
+}
+
+resource "aws_kms_key" "cicd" {
+  description             = "CMK for ${var.pipeline_name} pipeline artifacts and builds"
+  deletion_window_in_days = 7
+  enable_key_rotation     = true
+}
+
+resource "aws_kms_alias" "cicd" {
+  name          = "alias/${var.pipeline_name}-artifacts"
+  target_key_id = aws_kms_key.cicd.key_id
+}
+
+resource "aws_cloudwatch_log_group" "codebuild" {
+  name              = local.codebuild_log_group_name
+  retention_in_days = 14
+}
+
 resource "aws_iam_role" "codepipeline" {
   name = var.codepipeline_role_name
 
@@ -42,7 +70,7 @@ resource "aws_iam_role_policy" "codepipeline" {
           "codebuild:BatchGetBuilds",
           "codebuild:StartBuild"
         ]
-        Resource = "*"
+        Resource = aws_codebuild_project.this.arn
       },
       {
         Effect = "Allow"
@@ -50,6 +78,17 @@ resource "aws_iam_role_policy" "codepipeline" {
           "codestar-connections:UseConnection"
         ]
         Resource = [var.codestar_connection_arn]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "kms:Decrypt",
+          "kms:DescribeKey",
+          "kms:Encrypt",
+          "kms:GenerateDataKey*",
+          "kms:ReEncrypt*"
+        ]
+        Resource = aws_kms_key.cicd.arn
       }
     ]
   })
@@ -87,7 +126,10 @@ resource "aws_iam_role_policy" "codebuild" {
           "logs:CreateLogStream",
           "logs:PutLogEvents"
         ]
-        Resource = "*"
+        Resource = [
+          local.codebuild_log_group_arn,
+          "${local.codebuild_log_group_arn}:*"
+        ]
       },
       {
         Effect = "Allow"
@@ -108,7 +150,18 @@ resource "aws_iam_role_policy" "codebuild" {
           "lambda:GetFunction",
           "lambda:PublishVersion"
         ]
-        Resource = "*"
+        Resource = local.lambda_function_arns
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "kms:Decrypt",
+          "kms:DescribeKey",
+          "kms:Encrypt",
+          "kms:GenerateDataKey*",
+          "kms:ReEncrypt*"
+        ]
+        Resource = aws_kms_key.cicd.arn
       }
     ]
   })
@@ -117,6 +170,7 @@ resource "aws_iam_role_policy" "codebuild" {
 resource "aws_codebuild_project" "this" {
   name         = var.build_project_name
   service_role = aws_iam_role.codebuild.arn
+  encryption_key = aws_kms_key.cicd.arn
 
   artifacts {
     type = "CODEPIPELINE"
@@ -144,6 +198,13 @@ resource "aws_codebuild_project" "this" {
     buildspec = var.buildspec_path
   }
 
+  logs_config {
+    cloudwatch_logs {
+      group_name = aws_cloudwatch_log_group.codebuild.name
+      status     = "ENABLED"
+    }
+  }
+
 }
 
 resource "aws_codepipeline" "this" {
@@ -153,6 +214,11 @@ resource "aws_codepipeline" "this" {
   artifact_store {
     location = var.artifact_bucket_name
     type     = "S3"
+
+    encryption_key {
+      id   = aws_kms_key.cicd.arn
+      type = "KMS"
+    }
   }
 
   stage {
