@@ -74,6 +74,12 @@ jobs:
         run: |
           terraform fmt -check -recursive
 
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: us-east-1
+
       - name: Show Target Environment
         run: |
           echo "Running against environment: $TG_ENV"
@@ -81,19 +87,19 @@ jobs:
       - name: Terragrunt Validate (Global IAM)
         working-directory: live-infrastructure-terragrunt/${{ env.TG_ENV }}/_global
         run: |
-          terragrunt run --all init -- -backend=false -input=false
+          terragrunt run --all init -- -reconfigure -input=false
           terragrunt run --all validate
 
       - name: Terragrunt Validate (eu-west-1)
         working-directory: live-infrastructure-terragrunt/${{ env.TG_ENV }}/eu-west-1
         run: |
-          terragrunt run --all init -- -backend=false -input=false
+          terragrunt run --all init -- -reconfigure -input=false
           terragrunt run --all validate
 
       - name: Terragrunt Validate (us-east-1)
         working-directory: live-infrastructure-terragrunt/${{ env.TG_ENV }}/us-east-1
         run: |
-          terragrunt run --all init -- -backend=false -input=false
+          terragrunt run --all init -- -reconfigure -input=false
           terragrunt run --all validate
 
       - name: Security Scan (Checkov)
@@ -113,13 +119,6 @@ jobs:
         working-directory: live-infrastructure-terragrunt/${{ env.TG_ENV }}/eu-west-1
         run: |
           terragrunt run --all plan -- -input=false -lock=false -refresh=false -no-color || true
-
-      - name: Configure AWS Credentials
-        if: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.run_apply == 'true' || github.event.inputs.run_tests == 'true' || github.event.inputs.run_destroy == 'true') }}
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
-          aws-region: us-east-1
 
       - name: Apply (Global IAM)
         if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.run_apply == 'true' }}
