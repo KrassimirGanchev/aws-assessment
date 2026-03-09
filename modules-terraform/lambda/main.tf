@@ -88,5 +88,13 @@ resource "aws_lambda_function" "this" {
     }
   }
 
+  lifecycle {
+    ignore_changes = [
+      filename,
+      source_code_hash,
+      last_modified,
+    ]
+  }
+
   depends_on = [aws_cloudwatch_log_group.this]
 }

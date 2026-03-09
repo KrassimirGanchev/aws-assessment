@@ -136,19 +136,19 @@ jobs:
         if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.run_apply == 'true' }}
         working-directory: live-infrastructure-terragrunt/${{ env.TG_ENV }}/_global
         run: |
-          terragrunt run --all apply --terragrunt-non-interactive --auto-approve
+          terragrunt run --all apply --non-interactive -- --auto-approve
 
       - name: Apply (us-east-1)
         if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.run_apply == 'true' }}
         working-directory: live-infrastructure-terragrunt/${{ env.TG_ENV }}/us-east-1
         run: |
-          terragrunt run --all apply --terragrunt-non-interactive --auto-approve
+          terragrunt run --all apply --non-interactive -- --auto-approve
 
       - name: Apply (eu-west-1)
         if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.run_apply == 'true' }}
         working-directory: live-infrastructure-terragrunt/${{ env.TG_ENV }}/eu-west-1
         run: |
-          terragrunt run --all apply --terragrunt-non-interactive --auto-approve
+          terragrunt run --all apply --non-interactive -- --auto-approve
 
       - name: Collect Deployment Outputs
         if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.run_tests == 'true' }}
