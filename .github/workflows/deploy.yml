@@ -1,0 +1,198 @@
+name: IaC CI Pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment scope"
+        required: true
+        type: choice
+        options:
+          - dev
+          - stage
+          - prod
+        default: dev
+      run_apply:
+        description: "Apply infrastructure (global, us-east-1, eu-west-1)"
+        required: true
+        type: boolean
+        default: false
+      run_tests:
+        description: "Run real post-deployment tests"
+        required: true
+        type: boolean
+        default: false
+      run_destroy:
+        description: "Destroy infrastructure (eu-west-1, us-east-1, _global)"
+        required: true
+        type: boolean
+        default: false
+  push:
+    branches:
+      - main
+    paths:
+      - "Source/**"
+      - "live-infrastructure-terragrunt/**"
+      - "modules-terraform/**"
+      - "scripts/**"
+      - ".github/workflows/deploy.yml"
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  validate-plan:
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.environment || 'dev' }}
+    env:
+      TG_ENV: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.environment || 'dev' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.8.5
+
+      - name: Setup Terragrunt
+        uses: autero1/action-terragrunt@v3
+        with:
+          terragrunt-version: 0.69.1
+
+      - name: Guard Apply/Destroy Combination
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          if [[ "${{ github.event.inputs.run_apply }}" == "true" && "${{ github.event.inputs.run_destroy }}" == "true" ]]; then
+            echo "run_apply and run_destroy cannot both be true in the same run."
+            exit 1
+          fi
+
+      - name: Lint and Format Check
+        run: |
+          terraform fmt -check -recursive
+
+      - name: Show Target Environment
+        run: |
+          echo "Running against environment: $TG_ENV"
+
+      - name: Terragrunt Validate (Global IAM)
+        working-directory: live-infrastructure-terragrunt/${{ env.TG_ENV }}/_global
+        run: |
+          terragrunt run -- init -backend=false -input=false
+          terragrunt run -- validate
+
+      - name: Terragrunt Validate (eu-west-1)
+        working-directory: live-infrastructure-terragrunt/${{ env.TG_ENV }}/eu-west-1
+        run: |
+          terragrunt run-all run -- init -backend=false -input=false
+          terragrunt run-all run -- validate
+
+      - name: Terragrunt Validate (us-east-1)
+        working-directory: live-infrastructure-terragrunt/${{ env.TG_ENV }}/us-east-1
+        run: |
+          terragrunt run-all run -- init -backend=false -input=false
+          terragrunt run-all run -- validate
+
+      - name: Security Scan (Checkov)
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: .
+          framework: terraform
+          quiet: true
+          soft_fail: true
+
+      - name: Plan (us-east-1)
+        working-directory: live-infrastructure-terragrunt/${{ env.TG_ENV }}/us-east-1
+        run: |
+          terragrunt run-all run -- plan -input=false -lock=false -refresh=false -no-color || true
+
+      - name: Plan (eu-west-1)
+        working-directory: live-infrastructure-terragrunt/${{ env.TG_ENV }}/eu-west-1
+        run: |
+          terragrunt run-all run -- plan -input=false -lock=false -refresh=false -no-color || true
+
+      - name: Configure AWS Credentials
+        if: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.run_apply == 'true' || github.event.inputs.run_tests == 'true' || github.event.inputs.run_destroy == 'true') }}
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: us-east-1
+
+      - name: Apply (Global IAM)
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.run_apply == 'true' }}
+        working-directory: live-infrastructure-terragrunt/${{ env.TG_ENV }}/_global
+        run: |
+          terragrunt run-all apply --terragrunt-non-interactive --auto-approve
+
+      - name: Apply (us-east-1)
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.run_apply == 'true' }}
+        working-directory: live-infrastructure-terragrunt/${{ env.TG_ENV }}/us-east-1
+        run: |
+          terragrunt run-all apply --terragrunt-non-interactive --auto-approve
+
+      - name: Apply (eu-west-1)
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.run_apply == 'true' }}
+        working-directory: live-infrastructure-terragrunt/${{ env.TG_ENV }}/eu-west-1
+        run: |
+          terragrunt run-all apply --terragrunt-non-interactive --auto-approve
+
+      - name: Collect Deployment Outputs
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.run_tests == 'true' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          USER_POOL_ID=$(cd live-infrastructure-terragrunt/$TG_ENV/us-east-1/cognito && terragrunt output -raw user_pool_id)
+          USER_POOL_CLIENT_ID=$(cd live-infrastructure-terragrunt/$TG_ENV/us-east-1/cognito && terragrunt output -raw user_pool_client_id)
+          COGNITO_PASSWORD_SECRET_ID=$(cd live-infrastructure-terragrunt/$TG_ENV/us-east-1/secrets-manager && terragrunt output -raw secret_arn)
+          API_US_EAST_1=$(cd live-infrastructure-terragrunt/$TG_ENV/us-east-1/api-gateway && terragrunt output -raw api_endpoint)
+          API_EU_WEST_1=$(cd live-infrastructure-terragrunt/$TG_ENV/eu-west-1/api-gateway && terragrunt output -raw api_endpoint)
+
+          echo "USER_POOL_ID=$USER_POOL_ID" >> "$GITHUB_ENV"
+          echo "USER_POOL_CLIENT_ID=$USER_POOL_CLIENT_ID" >> "$GITHUB_ENV"
+          echo "COGNITO_PASSWORD_SECRET_ID=$COGNITO_PASSWORD_SECRET_ID" >> "$GITHUB_ENV"
+          echo "API_US_EAST_1=$API_US_EAST_1" >> "$GITHUB_ENV"
+          echo "API_EU_WEST_1=$API_EU_WEST_1" >> "$GITHUB_ENV"
+
+      - name: Setup Python
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.run_tests == 'true' }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Test Dependencies
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.run_tests == 'true' }}
+        run: |
+          pip install -r scripts/requirements.txt
+
+      - name: Post-Deploy Test Execution
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.run_tests == 'true' }}
+        run: |
+          python scripts/test_deployment.py \
+            --cognito-user-pool-id "$USER_POOL_ID" \
+            --cognito-client-id "$USER_POOL_CLIENT_ID" \
+            --username "${{ secrets.COGNITO_TEST_USERNAME }}" \
+            --password-secret-id "$COGNITO_PASSWORD_SECRET_ID" \
+            --api-us-east-1 "$API_US_EAST_1" \
+            --api-eu-west-1 "$API_EU_WEST_1" \
+            --set-password
+
+      - name: Destroy (eu-west-1)
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.run_destroy == 'true' }}
+        working-directory: live-infrastructure-terragrunt/${{ env.TG_ENV }}/eu-west-1
+        run: |
+          terragrunt run-all destroy --terragrunt-non-interactive --auto-approve
+
+      - name: Destroy (us-east-1)
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.run_destroy == 'true' }}
+        working-directory: live-infrastructure-terragrunt/${{ env.TG_ENV }}/us-east-1
+        run: |
+          terragrunt run-all destroy --terragrunt-non-interactive --auto-approve
+
+      - name: Destroy (_global)
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.run_destroy == 'true' }}
+        working-directory: live-infrastructure-terragrunt/${{ env.TG_ENV }}/_global
+        run: |
+          terragrunt run-all destroy --terragrunt-non-interactive --auto-approve

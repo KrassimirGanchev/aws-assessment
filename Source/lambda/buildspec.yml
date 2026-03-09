@@ -1,0 +1,14 @@
+version: 0.2
+phases:
+  build:
+    commands:
+      - cd Source/lambda
+      - zip -r lambda_bundle.zip greeter.py dispatcher.py
+      - aws lambda update-function-code --function-name $GREETER_FUNCTION_NAME --zip-file fileb://lambda_bundle.zip
+      - |
+        if [ -n "$DISPATCHER_FUNCTION_NAME" ]; then
+          aws lambda update-function-code --function-name $DISPATCHER_FUNCTION_NAME --zip-file fileb://lambda_bundle.zip
+        fi
+artifacts:
+  files:
+    - Source/lambda/lambda_bundle.zip

@@ -1,0 +1,14 @@
+version: 0.2
+phases:
+  pre_build:
+    commands:
+      - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+      - REPOSITORY_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY
+  build:
+    commands:
+      - docker build -t $REPOSITORY_URI:$IMAGE_TAG Source/ecs
+      - docker push $REPOSITORY_URI:$IMAGE_TAG
+      - printf '{"repository":"%s","imageTag":"%s"}' "$REPOSITORY_URI" "$IMAGE_TAG" > build-metadata.json
+artifacts:
+  files:
+    - build-metadata.json
