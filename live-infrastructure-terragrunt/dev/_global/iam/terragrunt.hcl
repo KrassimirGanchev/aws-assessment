@@ -12,8 +12,12 @@ terraform {
 }
 
 inputs = {
-  create_github_oidc_provider = true
-  github_oidc_subjects        = local.account_vars.locals.github_oidc_subjects
+  create_github_oidc_provider       = true
+  github_oidc_subjects              = []
+  github_repository                 = "${local.account_vars.locals.github_owner}/${local.account_vars.locals.github_repo}"
+  github_branch                     = local.account_vars.locals.github_branch
+  github_environments               = [local.account_vars.locals.environment]
+  github_allow_pull_request_subject = true
 
   github_actions_role_name             = local.account_vars.locals.names.github_actions_role
   github_actions_managed_policy_arns   = local.iam_vars.locals.github_actions_managed_policy_arns

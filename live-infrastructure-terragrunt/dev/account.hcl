@@ -8,11 +8,6 @@ locals {
   github_repo   = "aws-assessment"
   github_branch = "main"
 
-  github_oidc_subjects = [
-    "repo:KrassimirGanchev/aws-assessment:ref:refs/heads/main",
-    "repo:KrassimirGanchev/aws-assessment:pull_request"
-  ]
-
   codestar_connection_arn = "arn:aws:codestar-connections:us-east-1:693389441907:connection/101aea7b-0f41-495b-85f7-3b4f9ba182ef"
 
   candidate_email                     = "krassimir.ganchev@gmail.com"

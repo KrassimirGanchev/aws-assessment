@@ -24,6 +24,26 @@ variable "github_oidc_subjects" {
   type = list(string)
 }
 
+variable "github_repository" {
+  type    = string
+  default = ""
+}
+
+variable "github_branch" {
+  type    = string
+  default = ""
+}
+
+variable "github_environments" {
+  type    = list(string)
+  default = []
+}
+
+variable "github_allow_pull_request_subject" {
+  type    = bool
+  default = false
+}
+
 variable "github_actions_role_name" {
   type = string
 }
