@@ -194,16 +194,16 @@ jobs:
         if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.run_destroy == 'true' }}
         working-directory: live-infrastructure-terragrunt/${{ env.TG_ENV }}/eu-west-1
         run: |
-          terragrunt run --all destroy --terragrunt-non-interactive --auto-approve
+          terragrunt run --all destroy --non-interactive -- --auto-approve
 
       - name: Destroy (us-east-1)
         if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.run_destroy == 'true' }}
         working-directory: live-infrastructure-terragrunt/${{ env.TG_ENV }}/us-east-1
         run: |
-          terragrunt run --all destroy --terragrunt-non-interactive --auto-approve
+          terragrunt run --all destroy --non-interactive -- --auto-approve
 
       - name: Destroy (_global)
         if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.run_destroy == 'true' }}
         working-directory: live-infrastructure-terragrunt/${{ env.TG_ENV }}/_global
         run: |
-          terragrunt run --all destroy --terragrunt-non-interactive --auto-approve
+          terragrunt run --all destroy --non-interactive -- --auto-approve
