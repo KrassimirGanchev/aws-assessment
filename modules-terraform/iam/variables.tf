@@ -79,6 +79,7 @@ variable "github_actions_allowed_actions" {
     "iam:GetRolePolicy",
     "iam:ListOpenIDConnectProviderTags",
     "iam:ListAttachedRolePolicies",
+    "iam:ListInstanceProfilesForRole",
     "iam:ListRolePolicies",
     "iam:ListRoleTags",
     "iam:PassRole",
