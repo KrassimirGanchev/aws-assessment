@@ -71,12 +71,13 @@ jobs:
           fi
 
       - name: Format Terraform and Terragrunt Files
+        if: ${{ github.event_name == 'push' }}
         run: |
           terraform fmt -recursive
           terragrunt hcl fmt
 
       - name: Commit Terraform Formatting
-        if: ${{ github.actor != 'github-actions[bot]' }}
+        if: ${{ github.event_name == 'push' && github.actor != 'github-actions[bot]' }}
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "chore: auto-format IaC files [skip ci]"
@@ -92,18 +93,21 @@ jobs:
           echo "Running against environment: $TG_ENV"
 
       - name: Terragrunt Validate (Global IAM)
+        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.run_destroy != 'true' }}
         working-directory: live-infrastructure-terragrunt/${{ env.TG_ENV }}/_global
         run: |
           terragrunt run --all init -- -reconfigure -input=false
           terragrunt run --all validate
 
       - name: Terragrunt Validate (eu-west-1)
+        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.run_destroy != 'true' }}
         working-directory: live-infrastructure-terragrunt/${{ env.TG_ENV }}/eu-west-1
         run: |
           terragrunt run --all init -- -reconfigure -input=false
           terragrunt run --all validate
 
       - name: Terragrunt Validate (us-east-1)
+        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.run_destroy != 'true' }}
         working-directory: live-infrastructure-terragrunt/${{ env.TG_ENV }}/us-east-1
         run: |
           terragrunt run --all init -- -reconfigure -input=false
@@ -118,16 +122,19 @@ jobs:
           soft_fail: true
 
       - name: Plan (_global)
+        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.run_destroy != 'true' }}
         working-directory: live-infrastructure-terragrunt/${{ env.TG_ENV }}/_global
         run: |
           terragrunt run --all plan -- -input=false -lock=false -refresh=false -no-color || true
 
       - name: Plan (us-east-1)
+        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.run_destroy != 'true' }}
         working-directory: live-infrastructure-terragrunt/${{ env.TG_ENV }}/us-east-1
         run: |
           terragrunt run --all plan -- -input=false -lock=false -refresh=false -no-color || true
 
       - name: Plan (eu-west-1)
+        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.run_destroy != 'true' }}
         working-directory: live-infrastructure-terragrunt/${{ env.TG_ENV }}/eu-west-1
         run: |
           terragrunt run --all plan -- -input=false -lock=false -refresh=false -no-color || true
