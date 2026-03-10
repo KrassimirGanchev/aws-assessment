@@ -36,6 +36,11 @@ dependency "s3" {
 
 terraform {
   source = "${get_repo_root()}/modules-terraform/cicd-lambda"
+
+  before_hook "module" {
+    commands = ["init", "validate", "plan", "apply", "destroy"]
+    execute  = ["echo", "Working in: ${path_relative_to_include("root")}"]
+  }
 }
 
 inputs = {

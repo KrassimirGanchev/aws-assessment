@@ -8,6 +8,11 @@ locals {
 
 terraform {
   source = "${get_repo_root()}/modules-terraform/ecr"
+
+  before_hook "module" {
+    commands = ["init", "validate", "plan", "apply", "destroy"]
+    execute  = ["echo", "Working in: ${path_relative_to_include("root")}"]
+  }
 }
 
 inputs = {

@@ -63,12 +63,10 @@ jobs:
           terragrunt-version: 0.95.1
 
       - name: Guard Apply/Destroy Combination
-        if: ${{ github.event_name == 'workflow_dispatch' }}
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.run_apply == 'true' && github.event.inputs.run_destroy == 'true' }}
         run: |
-          if [[ "${{ github.event.inputs.run_apply }}" == "true" && "${{ github.event.inputs.run_destroy }}" == "true" ]]; then
-            echo "run_apply and run_destroy cannot both be true in the same run."
-            exit 1
-          fi
+          echo "run_apply and run_destroy cannot both be true in the same run."
+          exit 1
 
       - name: Format Terraform and Terragrunt Files
         if: ${{ github.event_name == 'push' }}
@@ -114,6 +112,7 @@ jobs:
           terragrunt run --all validate
 
       - name: Security Scan (Checkov)
+        if: ${{ github.event_name == 'push' }}
         uses: bridgecrewio/checkov-action@v12
         with:
           directory: .
