@@ -10,7 +10,7 @@ locals {
 dependency "secrets_manager" {
   config_path = "../secrets-manager"
 
-  mock_outputs_allowed_terraform_commands = ["validate", "plan", "init"]
+  mock_outputs_allowed_terraform_commands = ["validate", "plan", "init", "destroy"]
   mock_outputs = {
     secret_arn = "arn:aws:secretsmanager:us-east-1:000000000000:secret:mock-cognito-temp-password"
   }

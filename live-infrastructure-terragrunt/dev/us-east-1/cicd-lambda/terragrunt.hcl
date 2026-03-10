@@ -10,7 +10,7 @@ locals {
 dependency "lambda" {
   config_path = "../lambda-greeter"
 
-  mock_outputs_allowed_terraform_commands = ["validate", "plan", "init"]
+  mock_outputs_allowed_terraform_commands = ["validate", "plan", "init", "destroy"]
   mock_outputs = {
     function_name = "mock-greeter"
   }
@@ -19,7 +19,7 @@ dependency "lambda" {
 dependency "dispatcher_lambda" {
   config_path = "../lambda-dispatcher"
 
-  mock_outputs_allowed_terraform_commands = ["validate", "plan", "init"]
+  mock_outputs_allowed_terraform_commands = ["validate", "plan", "init", "destroy"]
   mock_outputs = {
     function_name = "mock-dispatcher"
   }
@@ -28,7 +28,7 @@ dependency "dispatcher_lambda" {
 dependency "s3" {
   config_path = "../s3"
 
-  mock_outputs_allowed_terraform_commands = ["validate", "plan", "init"]
+  mock_outputs_allowed_terraform_commands = ["validate", "plan", "init", "destroy"]
   mock_outputs = {
     bucket_id = "mock-bucket"
   }

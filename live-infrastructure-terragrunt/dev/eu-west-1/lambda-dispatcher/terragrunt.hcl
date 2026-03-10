@@ -10,7 +10,7 @@ locals {
 dependency "iam" {
   config_path = "../../_global/iam"
 
-  mock_outputs_allowed_terraform_commands = ["validate", "plan", "init"]
+  mock_outputs_allowed_terraform_commands = ["validate", "plan", "init", "destroy"]
   mock_outputs = {
     lambda_execution_role_arn   = "arn:aws:iam::000000000000:role/mock-lambda"
     ecs_task_execution_role_arn = "arn:aws:iam::000000000000:role/mock-ecs"
@@ -20,7 +20,7 @@ dependency "iam" {
 dependency "ecs" {
   config_path = "../ecs"
 
-  mock_outputs_allowed_terraform_commands = ["validate", "plan", "init"]
+  mock_outputs_allowed_terraform_commands = ["validate", "plan", "init", "destroy"]
   mock_outputs = {
     cluster_name           = "mock-cluster"
     task_definition_arn    = "arn:aws:ecs:eu-west-1:000000000000:task-definition/mock"

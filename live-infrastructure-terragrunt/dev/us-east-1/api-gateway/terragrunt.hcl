@@ -10,7 +10,7 @@ locals {
 dependency "lambda_greeter" {
   config_path = "../lambda-greeter"
 
-  mock_outputs_allowed_terraform_commands = ["validate", "plan", "init"]
+  mock_outputs_allowed_terraform_commands = ["validate", "plan", "init", "destroy"]
   mock_outputs = {
     function_name = "mock-greeter"
     invoke_arn    = "arn:aws:lambda:us-east-1:000000000000:function:mock-greeter"
@@ -20,7 +20,7 @@ dependency "lambda_greeter" {
 dependency "lambda_dispatcher" {
   config_path = "../lambda-dispatcher"
 
-  mock_outputs_allowed_terraform_commands = ["validate", "plan", "init"]
+  mock_outputs_allowed_terraform_commands = ["validate", "plan", "init", "destroy"]
   mock_outputs = {
     function_name = "mock-dispatcher"
     invoke_arn    = "arn:aws:lambda:us-east-1:000000000000:function:mock-dispatcher"
@@ -30,7 +30,7 @@ dependency "lambda_dispatcher" {
 dependency "cognito" {
   config_path = "../cognito"
 
-  mock_outputs_allowed_terraform_commands = ["validate", "plan", "init"]
+  mock_outputs_allowed_terraform_commands = ["validate", "plan", "init", "destroy"]
   mock_outputs = {
     user_pool_id        = "us-east-1_mock"
     user_pool_client_id = "mockclient"

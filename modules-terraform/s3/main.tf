@@ -29,8 +29,9 @@ resource "aws_s3_bucket" "this" {
   #checkov:skip=CKV_AWS_18: This assessment bucket is an internal artifact/state bucket and separate access-log bucket management is intentionally out of scope.
   #checkov:skip=CKV_AWS_144: Cross-region replication is intentionally not enabled for this single-account assessment environment.
   #checkov:skip=CKV2_AWS_62: Event notifications are not required for this artifact/state bucket.
-  bucket = var.bucket_name
-  tags   = { Name = var.bucket_name }
+  bucket        = var.bucket_name
+  force_destroy = true
+  tags          = { Name = var.bucket_name }
 }
 
 resource "aws_s3_bucket_versioning" "this" {

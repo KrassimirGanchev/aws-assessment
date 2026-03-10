@@ -10,7 +10,7 @@ locals {
 dependency "vpc" {
   config_path = "../vpc"
 
-  mock_outputs_allowed_terraform_commands = ["validate", "plan", "init"]
+  mock_outputs_allowed_terraform_commands = ["validate", "plan", "init", "destroy"]
   mock_outputs = {
     vpc_id             = "vpc-000000"
     public_subnet_ids  = ["subnet-000001", "subnet-000002"]
@@ -21,7 +21,7 @@ dependency "vpc" {
 dependency "iam" {
   config_path = "../../_global/iam"
 
-  mock_outputs_allowed_terraform_commands = ["validate", "plan", "init"]
+  mock_outputs_allowed_terraform_commands = ["validate", "plan", "init", "destroy"]
   mock_outputs = {
     ecs_task_execution_role_arn = "arn:aws:iam::000000000000:role/mock-ecs-task-execution"
   }
@@ -30,7 +30,7 @@ dependency "iam" {
 dependency "ecr" {
   config_path = "../../us-east-1/ecr"
 
-  mock_outputs_allowed_terraform_commands = ["validate", "plan", "init"]
+  mock_outputs_allowed_terraform_commands = ["validate", "plan", "init", "destroy"]
   mock_outputs = {
     repository_urls = {
       aws-assessment-dev-ecs = "000000000000.dkr.ecr.us-east-1.amazonaws.com/aws-assessment-dev-ecs"
@@ -41,7 +41,7 @@ dependency "ecr" {
 dependency "sns" {
   config_path = "../../us-east-1/sns"
 
-  mock_outputs_allowed_terraform_commands = ["validate", "plan", "init"]
+  mock_outputs_allowed_terraform_commands = ["validate", "plan", "init", "destroy"]
   mock_outputs = {
     topic_arn = "arn:aws:sns:us-east-1:000000000000:mock-topic"
   }

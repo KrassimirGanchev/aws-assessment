@@ -10,7 +10,7 @@ locals {
 dependency "iam" {
   config_path = "../../_global/iam"
 
-  mock_outputs_allowed_terraform_commands = ["validate", "plan", "init"]
+  mock_outputs_allowed_terraform_commands = ["validate", "plan", "init", "destroy"]
   mock_outputs = {
     lambda_execution_role_arn = "arn:aws:iam::000000000000:role/mock-lambda"
   }
@@ -19,7 +19,7 @@ dependency "iam" {
 dependency "dynamodb" {
   config_path = "../dynamodb"
 
-  mock_outputs_allowed_terraform_commands = ["validate", "plan", "init"]
+  mock_outputs_allowed_terraform_commands = ["validate", "plan", "init", "destroy"]
   mock_outputs = {
     table_name = "GreetingLogs-eu-west-1"
   }
@@ -28,7 +28,7 @@ dependency "dynamodb" {
 dependency "sns" {
   config_path = "../../us-east-1/sns"
 
-  mock_outputs_allowed_terraform_commands = ["validate", "plan", "init"]
+  mock_outputs_allowed_terraform_commands = ["validate", "plan", "init", "destroy"]
   mock_outputs = {
     topic_arn = "arn:aws:sns:us-east-1:000000000000:mock-topic"
   }
